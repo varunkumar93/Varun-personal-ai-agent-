@@ -17,7 +17,8 @@ def get_response(prompt):
         "messages": [
             {"role": "system", "content": "You are Varun's helpful assistant."},
             {"role": "user", "content": prompt}
-        ]
+        ], 
+        "max_tokens": 2000
     }
     response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
     st.write(response.text)  # Show raw response for debugging
