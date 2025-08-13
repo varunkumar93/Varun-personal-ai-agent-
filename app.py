@@ -13,7 +13,7 @@ def get_response(prompt):
         "Content-Type": "application/json"
     }
     data = {
-        "model": "mistralai/mistral-medium",
+        "model": mistralai/mistral-medium-3.1",
         "messages": [
             {"role": "system", "content": "You are Varun's helpful assistant."},
             {"role": "user", "content": prompt}
