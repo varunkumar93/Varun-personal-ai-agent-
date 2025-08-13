@@ -13,7 +13,7 @@ def get_response(prompt):
         "Content-Type": "application/json"
     }
     data = {
-        "model": "openrouter/llama2-13b-chat",
+        "model": "mistralai/mistral-medium",
         "messages": [
             {"role": "system", "content": "You are Varun's helpful assistant."},
             {"role": "user", "content": prompt}
