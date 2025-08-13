@@ -20,7 +20,14 @@ def get_response(prompt):
         ]
     }
     response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
-    return response.json()["choices"][0]["message"]["content"]
+    st.write(response.text)  # Show raw response for debugging
+    result = response.json()
+    if "choices" in result:
+        return result["choices"][0]["message"]["content"]
+    elif "error" in result:
+        return f"API Error: {result['error']}"
+    else:
+        return "Unexpected API response. Please check your API key and model name."
 
 if user_input:
     with st.spinner("Thinking..."):
