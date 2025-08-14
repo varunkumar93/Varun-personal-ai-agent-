@@ -8,8 +8,35 @@ import os
 # ---------- SETTINGS ----------
 st.set_page_config(page_title="Varun's AI Assistant", layout="centered")
 
-with open("style.css", "r") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+# ---------- THEME TOGGLE ----------
+if "theme" not in st.session_state:
+    st.session_state.theme = "dark"
+
+theme_choice = st.radio("Choose Theme", ["🌙 Dark", "☀️ Light"], horizontal=True)
+st.session_state.theme = "dark" if "Dark" in theme_choice else "light"
+
+# ---------- INLINE CSS ----------
+def get_css(theme):
+    if theme == "dark":
+        return """
+        <style>
+        body { background-color: #000; color: #fff; }
+        .chat-message { background-color: #2ca02c; color: white; border-radius: 8px; padding: 8px; margin-bottom: 10px; }
+        .user-message { background-color: #1f77b4; color: white; border-radius: 8px; padding: 8px; margin-bottom: 10px; text-align: right; }
+        #input-area { background-color: #000; border-top: 1px solid #333; padding: 10px; }
+        </style>
+        """
+    else:
+        return """
+        <style>
+        body { background-color: #f5f5f5; color: #000; }
+        .chat-message { background-color: #dff0d8; color: #000; border-radius: 8px; padding: 8px; margin-bottom: 10px; }
+        .user-message { background-color: #cce5ff; color: #000; border-radius: 8px; padding: 8px; margin-bottom: 10px; text-align: right; }
+        #input-area { background-color: #fff; border-top: 1px solid #ccc; padding: 10px; }
+        </style>
+        """
+
+st.markdown(get_css(st.session_state.theme), unsafe_allow_html=True)
 
 # ---------- API CLIENT ----------
 api_key = st.secrets["GROQ_API_KEY"]
@@ -39,30 +66,4 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # ---------- LOAD CHAT HISTORY ----------
-HISTORY_FILE = "chat_history.json"
-if os.path.exists(HISTORY_FILE):
-    with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-        st.session_state.messages = json.load(f)
-
-# ---------- SAVE CHAT HISTORY ----------
-def save_history():
-    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-        json.dump(st.session_state.messages, f, ensure_ascii=False, indent=2)
-
-# ---------- GET AI RESPONSE ----------
-def get_ai_response(prompt, personality_prompt, user_profile):
-    context = (
-        f"You are Varun's AI Assistant. Your user is {user_profile.get('name', 'a curious person')}.\n"
-        f"They are interested in {', '.join(user_profile.get('interests', []))}.\n"
-        f"Their goals include {', '.join(user_profile.get('goals', []))}.\n"
-        f"Your tone should be {user_profile.get('tone', 'friendly and helpful')}.\n"
-        f"Respond in the style: {personality_prompt}"
-    )
-    chat_completion = client.chat.completions.create(
-        model="llama3-8b-8192",
-        messages=[
-            {"role": "system", "content": context},
-            {"role": "user", "content": prompt}
-        ]
-    )
-    return chat
+HISTORY
