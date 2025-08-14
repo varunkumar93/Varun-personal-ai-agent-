@@ -1,47 +1,46 @@
+import os
 import streamlit as st
-import openai
-import datetime
+from openai import OpenAI
 
-# ✅ Page config
-st.set_page_config(page_title="🤖 Varun's Personal AI Agent", layout="centered")
+# Set page config
+st.set_page_config(page_title="Varun's AI Agent", layout="centered")
 
-# ✅ OpenAI API key from secrets
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+# Load API key from secrets
+api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=api_key)
 
-# ✅ AI function
-def get_ai_reply(user_input):
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "You are Varun's helpful personal AI assistant."},
-            {"role": "user", "content": user_input}
-        ]
-    )
-    return response["choices"][0]["message"]["content"].strip()
+# Initialize session state variables
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-# ✅ Session state
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-if "user_message" not in st.session_state:
-    st.session_state.user_message = ""
-
-# ✅ Function to handle sending message
-def send_message():
-    if st.session_state.user_message.strip():
-        current_time = datetime.datetime.now().strftime("%H:%M")
-        st.session_state.chat_history.append(("You", st.session_state.user_message, current_time))
-        
-        bot_reply = get_ai_reply(st.session_state.user_message)
-        st.session_state.chat_history.append(("Bot", bot_reply, current_time))
-        
-        st.session_state.user_message = ""  # ✅ safe to reset here
-
-# ✅ Title
+# App Title
 st.title("🤖 Varun's Personal AI Agent")
+st.markdown("Hello 😊 How can I assist you today? 🚀")
 
-# ✅ Chat display
-for sender, message, time in st.session_state.chat_history:
-    st.markdown(f"**{sender}** ({time}): {message}")
+# User input
+user_input = st.text_input("💬 Your message:", key="user_input_box")
 
-# ✅ Input & send
-st.text_input("💬 Your message:", key="user_message", on_change=send_message)
+# Handle user message
+if st.button("Send") and user_input.strip():
+    # Save user message
+    st.session_state.messages.append({"role": "user", "content": user_input})
+
+    try:
+        # New API call
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=st.session_state.messages
+        )
+        bot_reply = response.choices[0].message.content
+    except Exception as e:
+        bot_reply = f"⚠️ Error: {str(e)}"
+
+    # Save assistant message
+    st.session_state.messages.append({"role": "assistant", "content": bot_reply})
+
+# Display chat history
+for msg in st.session_state.messages:
+    if msg["role"] == "user":
+        st.markdown(f"**You:** {msg['content']}")
+    else:
+        st.markdown(f"**AI:** {msg['content']}")
