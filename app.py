@@ -1,64 +1,48 @@
 import streamlit as st
-from datetime import datetime
+import openai
+import datetime
 
-# Page setup
-st.set_page_config(page_title="Varun's AI Agent", layout="centered")
+# ✅ Set Streamlit page settings
+st.set_page_config(page_title="🤖 Varun's Personal AI Agent", layout="centered")
+
+# ✅ Load API key from Streamlit secrets
+openai.api_key = st.secrets["OPENAI_API_KEY"]
+
+# ✅ AI Response Function
+def get_ai_reply(user_input):
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",  # Change to "gpt-4" if you have access
+        messages=[
+            {"role": "system", "content": "You are Varun's helpful personal AI assistant."},
+            {"role": "user", "content": user_input}
+        ],
+        temperature=0.7
+    )
+    return response["choices"][0]["message"]["content"].strip()
+
+# ✅ Initialize session state variables
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
+# ✅ App title
 st.title("🤖 Varun's Personal AI Agent")
+st.markdown("Hello 😊 How can I assist you today? 🚀")
 
-# Initialize chat history
-if "chat_data" not in st.session_state:
-    st.session_state.chat_data = [
-        {
-            "time": datetime.now().strftime("%H:%M"),
-            "message": "Hello 😊 How can I assist you today? 🚀",
-            "is_user": False
-        }
-    ]
+# ✅ Input box
+user_input = st.text_input("💬 Your message:")
 
-# Function to display chat bubbles
-def display_chat():
-    for chat in st.session_state.chat_data:
-        bubble_color = "#2c2c2c" if not chat["is_user"] else "#0078FF"
-        align = "flex-start" if not chat["is_user"] else "flex-end"
-        text_align = "left" if not chat["is_user"] else "right"
+# ✅ Send button
+if st.button("Send"):
+    if user_input.strip():
+        current_time = datetime.datetime.now().strftime("%H:%M")
+        st.session_state.chat_history.append(("You", user_input, current_time))
 
-        st.markdown(
-            f"""
-            <div style="display:flex; justify-content:{align}; margin-bottom:10px;">
-                <div style="max-width:70%; background-color:{bubble_color}; padding:8px 12px;
-                            border-radius:10px; color:white; box-shadow:0px 2px 6px rgba(0,0,0,0.2); text-align:{text_align};">
-                    {chat['message']}
-                    <div style="font-size:0.7em; color:lightgray; margin-top:2px; text-align:{text_align};">
-                        {chat['time']}
-                    </div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        bot_reply = get_ai_reply(user_input)
+        st.session_state.chat_history.append(("Bot", bot_reply, current_time))
 
-# Show chat
-display_chat()
+        # Clear text box by rerunning with empty input
+        st.experimental_rerun()
 
-# Input box
-user_input = st.text_input("💬 Your message:", key="user_message")
-
-# If user sends a message
-if user_input:
-    # Add user message
-    st.session_state.chat_data.append({
-        "time": datetime.now().strftime("%H:%M"),
-        "message": user_input,
-        "is_user": True
-    })
-
-    # Bot reply (placeholder)
-    st.session_state.chat_data.append({
-        "time": datetime.now().strftime("%H:%M"),
-        "message": f"You said: {user_input}",
-        "is_user": False
-    })
-
-    # Clear input box safely
-    st.session_state.user_message = ""
-    st.experimental_rerun()
+# ✅ Chat history display
+for sender, message, time in st.session_state.chat_history:
+    st.markdown(f"**{sender}** ({time}): {message}")
