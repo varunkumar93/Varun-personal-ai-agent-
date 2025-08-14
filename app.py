@@ -60,16 +60,17 @@ div.stButton>button {
 """, unsafe_allow_html=True)
 
 # ---------- API CLIENT ----------
-client = Groq(api_key="YOUR_GROQ_API_KEY")  # Replace with your Groq API key
+api_key = st.secrets["groq"]["api_key"]  # read securely from secrets.toml
+client = Groq(api_key=api_key)
 
 # ---------- APP TITLE ----------
 st.title("🤖 Varun's AI Assistant")
 
 # ---------- AI PERSONALITIES ----------
 personalities = {
-    "Friendly": "You are a friendly and casual AI assistant.",
+    "Friendly": "You are a friendly and casual AI assistant. Use emojis freely.",
     "Professional": "You are a professional AI assistant giving precise answers.",
-    "Funny": "You are a humorous AI assistant, adding jokes lightly.",
+    "Funny": "You are a humorous AI assistant, adding light jokes and emojis.",
 }
 ai_style = st.selectbox("Choose AI Personality", list(personalities.keys()), index=0)
 
@@ -135,7 +136,7 @@ with st.form(key="chat_form", clear_on_submit=True):
         # Placeholder for AI typing
         placeholder = st.empty()
         placeholder.markdown("<div class='chat-message ai-message'><b>Varun's AI:</b> Typing...</div>", unsafe_allow_html=True)
-        time.sleep(0.8)  # typing indicator pause
+        time.sleep(0.8)
 
         # Get AI response
         ai_reply = get_ai_response(user_input, personalities[ai_style])
@@ -148,7 +149,7 @@ with st.form(key="chat_form", clear_on_submit=True):
                 f"<div class='chat-message ai-message'><b>Varun's AI:</b> {typed_text}<span class='timestamp'>{datetime.now().strftime('%H:%M')}</span></div>",
                 unsafe_allow_html=True
             )
-            time.sleep(0.02)  # typing speed
+            time.sleep(0.02)
 
         # Save AI reply
         st.session_state.messages.append({
