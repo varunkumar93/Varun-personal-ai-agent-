@@ -8,69 +8,29 @@ import os
 # ---------- SETTINGS ----------
 st.set_page_config(page_title="Varun's AI Assistant", layout="centered")
 
-st.markdown("""
-<style>
-body { background-color: #000; color: #fff; }
-div.stTextInput>div>div>input {
-    background-color: #222 !important;
-    color: #fff !important;
-    border-radius: 8px;
-    border: 1px solid #444;
-    padding: 6px;
-}
-div.stButton>button {
-    background-color: #444 !important;
-    color: #fff !important;
-    border-radius: 8px;
-    border: 1px solid #555;
-}
-.chat-message {
-    padding: 8px;
-    border-radius: 8px;
-    margin-bottom: 5px;
-    word-wrap: break-word;
-    max-width: 80%;
-}
-.user-message {
-    color: #4DB8FF;
-    text-align: right;
-    margin-left: auto;
-    background-color: #111;
-}
-.ai-message {
-    color: #90EE90;
-    text-align: left;
-    margin-right: auto;
-    background-color: #111;
-}
-.timestamp {
-    font-size: 10px;
-    color: #888;
-    display: block;
-    margin-top: 2px;
-}
-#chat-container {
-    height: 65vh;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    padding-right: 5px;
-}
-</style>
-""", unsafe_allow_html=True)
+with open("style.css", "r") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # ---------- API CLIENT ----------
 api_key = st.secrets["GROQ_API_KEY"]
 client = Groq(api_key=api_key)
 
-# ---------- APP TITLE ----------
-st.title("🤖 Varun's AI Assistant")
+# ---------- USER PROFILE ----------
+def load_user_profile():
+    if os.path.exists("user_profile.json"):
+        with open("user_profile.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+user_profile = load_user_profile()
 
 # ---------- AI PERSONALITIES ----------
 personalities = {
     "Friendly": "You are a friendly and casual AI assistant. Use emojis freely.",
     "Professional": "You are a professional AI assistant giving precise answers.",
     "Funny": "You are a humorous AI assistant, adding light jokes and emojis.",
+    "Spiritual Guide": "You are a wise and gentle assistant who shares spiritual insights and devotional inspiration.",
+    "Tech Mentor": "You are a practical and encouraging assistant who helps users learn machine learning and build projects."
 }
 ai_style = st.selectbox("Choose AI Personality", list(personalities.keys()), index=0)
 
@@ -78,23 +38,30 @@ ai_style = st.selectbox("Choose AI Personality", list(personalities.keys()), ind
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# ---------- LOAD PERSISTENT CHAT HISTORY ----------
+# ---------- LOAD CHAT HISTORY ----------
 HISTORY_FILE = "chat_history.json"
 if os.path.exists(HISTORY_FILE):
     with open(HISTORY_FILE, "r", encoding="utf-8") as f:
         st.session_state.messages = json.load(f)
 
-# ---------- FUNCTION TO SAVE CHAT HISTORY ----------
+# ---------- SAVE CHAT HISTORY ----------
 def save_history():
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(st.session_state.messages, f, ensure_ascii=False, indent=2)
 
-# ---------- FUNCTION TO GET AI RESPONSE ----------
-def get_ai_response(prompt, personality_prompt):
+# ---------- GET AI RESPONSE ----------
+def get_ai_response(prompt, personality_prompt, user_profile):
+    context = f"""
+You are Varun's AI Assistant. Your user is {user_profile.get('name', 'a curious person')}.
+They are interested in {', '.join(user_profile.get('interests', []))}.
+Their goals include {', '.join(user_profile.get('goals', []))}.
+Your tone should be {user_profile.get('tone', 'friendly and helpful')}.
+Respond in the style: {personality_prompt}
+"""
     chat_completion = client.chat.completions.create(
         model="llama3-8b-8192",
         messages=[
-            {"role": "system", "content": personality_prompt},
+            {"role": "system", "content": context},
             {"role": "user", "content": prompt}
         ]
     )
@@ -115,7 +82,7 @@ def display_chat():
 
 display_chat()
 
-# ---------- INPUT AREA WITH FORM ----------
+# ---------- INPUT FORM ----------
 with st.form(key="chat_form", clear_on_submit=True):
     col1, col2 = st.columns([8, 1])
     with col1:
@@ -124,7 +91,6 @@ with st.form(key="chat_form", clear_on_submit=True):
         send_clicked = st.form_submit_button("📩 Send")
 
     if send_clicked and user_input.strip():
-        # Add user message with timestamp
         st.session_state.messages.append({
             "role": "user",
             "content": user_input,
@@ -133,29 +99,15 @@ with st.form(key="chat_form", clear_on_submit=True):
         save_history()
         display_chat()
 
-        # Placeholder for AI typing
         placeholder = st.empty()
         placeholder.markdown("<div class='chat-message ai-message'><b>Varun's AI:</b> Typing...</div>", unsafe_allow_html=True)
         time.sleep(0.8)
 
-        # Get AI response
-        ai_reply = get_ai_response(user_input, personalities[ai_style])
+        ai_reply = get_ai_response(user_input, personalities[ai_style], user_profile)
 
-        # Typing animation
         typed_text = ""
         for char in ai_reply:
             typed_text += char
             placeholder.markdown(
                 f"<div class='chat-message ai-message'><b>Varun's AI:</b> {typed_text}<span class='timestamp'>{datetime.now().strftime('%H:%M')}</span></div>",
-                unsafe_allow_html=True
-            )
-            time.sleep(0.02)
-
-        # Save AI reply
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": ai_reply,
-            "time": datetime.now().strftime("%H:%M")
-        })
-        save_history()
-        st.experimental_rerun()
+                unsafe_allow_html
