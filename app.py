@@ -66,4 +66,78 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # ---------- LOAD CHAT HISTORY ----------
-HISTORY
+HISTORY_FILE = "chat_history.json"
+if os.path.exists(HISTORY_FILE):
+    with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+        st.session_state.messages = json.load(f)
+
+# ---------- SAVE CHAT HISTORY ----------
+def save_history():
+    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(st.session_state.messages, f, ensure_ascii=False, indent=2)
+
+# ---------- GET AI RESPONSE ----------
+def get_ai_response(prompt, personality_prompt, user_profile):
+    context = (
+        f"You are Varun's AI Assistant. Your user is {user_profile.get('name', 'a curious person')}.\n"
+        f"They are interested in {', '.join(user_profile.get('interests', []))}.\n"
+        f"Their goals include {', '.join(user_profile.get('goals', []))}.\n"
+        f"Your tone should be {user_profile.get('tone', 'friendly and helpful')}.\n"
+        f"Respond in the style: {personality_prompt}"
+    )
+    chat_completion = client.chat.completions.create(
+        model="llama3-8b-8192",
+        messages=[
+            {"role": "system", "content": context},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    return chat_completion.choices[0].message.content
+
+# ---------- DISPLAY CHAT ----------
+st.markdown("### 💬 Chat with Varun's Assistant")
+
+for msg in st.session_state.messages:
+    if msg["role"] == "user":
+        st.markdown(f"<div class='user-message'>{msg['content']}</div>", unsafe_allow_html=True)
+    else:
+        st.markdown(f"<div class='chat-message'>{msg['content']}</div>", unsafe_allow_html=True)
+
+# ---------- INPUT FORM ----------
+st.markdown("<div id='input-area'>", unsafe_allow_html=True)
+with st.form(key="chat_form", clear_on_submit=True):
+    col1, col2 = st.columns([1, 9])
+    with col1:
+        send_clicked = st.form_submit_button("📩", use_container_width=True)
+    with col2:
+        user_input = st.text_input("Type your message...", label_visibility="collapsed")
+st.markdown("</div>", unsafe_allow_html=True)
+
+# ---------- HANDLE INPUT ----------
+if send_clicked and user_input.strip():
+    st.session_state.messages.append({
+        "role": "user",
+        "content": user_input,
+        "time": datetime.now().strftime("%H:%M")
+    })
+    save_history()
+
+    placeholder = st.empty()
+    placeholder.markdown("<div class='chat-message'><b>Varun's AI:</b> Typing...</div>", unsafe_allow_html=True)
+    time.sleep(0.8)
+
+    ai_reply = get_ai_response(user_input, personalities[ai_style], user_profile)
+
+    typed_text = ""
+    for char in ai_reply:
+        typed_text += char
+        placeholder.markdown(f"<div class='chat-message'>{typed_text}</div>", unsafe_allow_html=True)
+        time.sleep(0.02)
+
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": ai_reply,
+        "time": datetime.now().strftime("%H:%M")
+    })
+    save_history()
+    st.rerun()
