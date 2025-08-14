@@ -65,17 +65,6 @@ ai_style = st.selectbox("Choose AI Personality", list(personalities.keys()), ind
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# ---------- LOAD CHAT HISTORY ----------
-HISTORY_FILE = "chat_history.json"
-if os.path.exists(HISTORY_FILE):
-    with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-        st.session_state.messages = json.load(f)
-
-# ---------- SAVE CHAT HISTORY ----------
-def save_history():
-    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-        json.dump(st.session_state.messages, f, ensure_ascii=False, indent=2)
-
 # ---------- GET AI RESPONSE ----------
 def get_ai_response(prompt, personality_prompt, user_profile):
     context = (
@@ -120,7 +109,6 @@ if send_clicked and user_input.strip():
         "content": user_input,
         "time": datetime.now().strftime("%H:%M")
     })
-    save_history()
 
     placeholder = st.empty()
     placeholder.markdown("<div class='chat-message'><b>Varun's AI:</b> Typing...</div>", unsafe_allow_html=True)
@@ -139,5 +127,5 @@ if send_clicked and user_input.strip():
         "content": ai_reply,
         "time": datetime.now().strftime("%H:%M")
     })
-    save_history()
+
     st.rerun()
