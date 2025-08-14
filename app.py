@@ -1,44 +1,43 @@
-import os
 import streamlit as st
-from openai import OpenAI
+from groq import Groq
 
-# Set page config
-st.set_page_config(page_title="Varun's AI Agent", layout="centered")
-
-# Load API key from secrets
-api_key = os.getenv("OPENAI_API_KEY")
-client = OpenAI(api_key=api_key)
-
-# Initialize session state variables
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-# App Title
+# Page config
+st.set_page_config(page_title="🤖 Varun's Personal AI Agent", layout="centered")
 st.title("🤖 Varun's Personal AI Agent")
 st.markdown("Hello 😊 How can I assist you today? 🚀")
 
+# Initialize chat history in session state
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# Groq client (reads key from Streamlit Secrets)
+client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+
 # User input
-user_input = st.text_input("💬 Your message:", key="user_input_box")
+user_message = st.text_input("💬 Your message:", key="user_input")
 
-# Handle user message
-if st.button("Send") and user_input.strip():
-    # Save user message
-    st.session_state.messages.append({"role": "user", "content": user_input})
+# When user sends a message
+if st.button("Send"):
+    if user_message.strip():
+        # Save user message
+        st.session_state.messages.append({"role": "user", "content": user_message})
 
-    try:
-        # New API call
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=st.session_state.messages
-        )
-        bot_reply = response.choices[0].message.content
-    except Exception as e:
-        bot_reply = f"⚠️ Error: {str(e)}"
+        try:
+            # Get Groq AI response
+            chat_completion = client.chat.completions.create(
+                model="llama3-8b-8192",
+                messages=st.session_state.messages
+            )
+            bot_reply = chat_completion.choices[0].message.content
 
-    # Save assistant message
-    st.session_state.messages.append({"role": "assistant", "content": bot_reply})
+            # Save bot message
+            st.session_state.messages.append({"role": "assistant", "content": bot_reply})
 
-# Display chat history
+        except Exception as e:
+            bot_reply = f"⚠️ Error: {e}"
+            st.session_state.messages.append({"role": "assistant", "content": bot_reply})
+
+# Display messages
 for msg in st.session_state.messages:
     if msg["role"] == "user":
         st.markdown(f"**You:** {msg['content']}")
