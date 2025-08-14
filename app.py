@@ -60,7 +60,7 @@ div.stButton>button {
 """, unsafe_allow_html=True)
 
 # ---------- API CLIENT ----------
-api_key = st.secrets["groq"]["api_key"]  # read securely from secrets.toml
+api_key = st.secrets["GROQ_API_KEY"]
 client = Groq(api_key=api_key)
 
 # ---------- APP TITLE ----------
