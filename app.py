@@ -1,45 +1,48 @@
+
 import streamlit as st
-from groq import Groq
 
-# Page config
-st.set_page_config(page_title="🤖 Varun's Personal AI Agent", layout="centered")
-st.title("🤖 Varun's Personal AI Agent")
-st.markdown("Hello 😊 How can I assist you today? 🚀")
+st.set_page_config(page_title="Varun's AI Agent", layout="wide")
 
-# Initialize chat history in session state
+# Init session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Groq client (reads key from Streamlit Secrets)
-client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+def get_response(prompt):
+    # Dummy AI logic - replace with your API call
+    return f"Echo: {prompt}"
 
-# User input
-user_message = st.text_input("💬 Your message:", key="user_input")
+def send_message():
+    if st.session_state.user_input.strip():
+        # Add user message
+        st.session_state.messages.append({"role": "user", "content": st.session_state.user_input})
+        
+        # Get AI reply
+        reply = get_response(st.session_state.user_input)
+        st.session_state.messages.append({"role": "ai", "content": reply})
+        
+        # Clear text box
+        st.session_state.user_input = ""
 
-# When user sends a message
-if st.button("Send"):
-    if user_message.strip():
-        # Save user message
-        st.session_state.messages.append({"role": "user", "content": user_message})
+# Chat container
+chat_container = st.container()
 
-        try:
-            # Get Groq AI response
-            chat_completion = client.chat.completions.create(
-                model="llama3-8b-8192",
-                messages=st.session_state.messages
-            )
-            bot_reply = chat_completion.choices[0].message.content
+# Scrollable area for messages
+with chat_container:
+    for msg in st.session_state.messages:
+        if msg["role"] == "user":
+            st.markdown(f"<div style='text-align:right;color:blue;'><b>You:</b> {msg['content']}</div>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"<div style='text-align:left;color:green;'><b>AI:</b> {msg['content']}</div>", unsafe_allow_html=True)
 
-            # Save bot message
-            st.session_state.messages.append({"role": "assistant", "content": bot_reply})
+# Fixed input area at bottom
+st.markdown(
+    """
+    <style>
+    .block-container {padding-top: 1rem; padding-bottom: 0rem;}
+    .stTextInput {position: fixed; bottom: 0; width: 100%;}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-        except Exception as e:
-            bot_reply = f"⚠️ Error: {e}"
-            st.session_state.messages.append({"role": "assistant", "content": bot_reply})
-
-# Display messages
-for msg in st.session_state.messages:
-    if msg["role"] == "user":
-        st.markdown(f"**You:** {msg['content']}")
-    else:
-        st.markdown(f"**AI:** {msg['content']}")
+st.text_input("💬 Type your message", key="user_input", on_change=send_message)
