@@ -5,12 +5,11 @@ from datetime import datetime
 st.set_page_config(page_title="Varun's AI Agent", layout="centered")
 st.title("🤖 Varun's Personal AI Agent")
 
-# Initialize chat history in session state
+# Initialize chat history
 if "chat_data" not in st.session_state:
     st.session_state.chat_data = [
         {
             "time": datetime.now().strftime("%H:%M"),
-            "avatar": "https://cdn-icons-png.flaticon.com/512/847/847969.png",
             "message": "Hello 😊 How can I assist you today? 🚀",
             "is_user": False
         }
@@ -41,28 +40,25 @@ def display_chat():
 # Show chat
 display_chat()
 
-# User input
-user_input = st.text_input("💬 Your message:", key="input_box")
+# Input box
+user_input = st.text_input("💬 Your message:", key="user_message")
 
-# On send
+# If user sends a message
 if user_input:
+    # Add user message
     st.session_state.chat_data.append({
         "time": datetime.now().strftime("%H:%M"),
-        "avatar": "",
         "message": user_input,
         "is_user": True
     })
 
-    # Example bot reply (replace with API call)
+    # Bot reply (placeholder)
     st.session_state.chat_data.append({
         "time": datetime.now().strftime("%H:%M"),
-        "avatar": "https://cdn-icons-png.flaticon.com/512/847/847969.png",
         "message": f"You said: {user_input}",
         "is_user": False
     })
 
-    # Clear the input box after sending
-    st.session_state.input_box = ""
-
-    # Refresh page to show the new messages
+    # Clear input box safely
+    st.session_state.user_message = ""
     st.experimental_rerun()
