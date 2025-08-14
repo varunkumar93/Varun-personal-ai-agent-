@@ -1,81 +1,160 @@
 import streamlit as st
+from groq import Groq
+import time
+from datetime import datetime
+import json
+import os
 
-st.set_page_config(page_title="Varun's AI Assistant", layout="wide")
+# ---------- SETTINGS ----------
+st.set_page_config(page_title="Varun's AI Assistant", layout="centered")
 
-# Dark theme styles
-st.markdown(
-    """
-    <style>
-    body {
-        background-color: #121212;
-        color: white;
-    }
-    .block-container {
-        padding-top: 1rem;
-        padding-bottom: 5rem;
-        background-color: #121212;
-    }
-    div[data-testid="stVerticalBlock"] {
-        background-color: #121212 !important;
-    }
-    div[data-testid="stHorizontalBlock"] {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: #1E1E1E;
-        padding: 0.5rem;
-        border-top: 1px solid #333;
-    }
-    input, textarea {
-        background-color: #2C2C2C !important;
-        color: white !important;
-        border: 1px solid #444 !important;
-    }
-    button {
-        background-color: #3C3C3C !important;
-        color: white !important;
-        border: 1px solid #555 !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+st.markdown("""
+<style>
+body { background-color: #000; color: #fff; }
+div.stTextInput>div>div>input {
+    background-color: #222 !important;
+    color: #fff !important;
+    border-radius: 8px;
+    border: 1px solid #444;
+    padding: 6px;
+}
+div.stButton>button {
+    background-color: #444 !important;
+    color: #fff !important;
+    border-radius: 8px;
+    border: 1px solid #555;
+}
+.chat-message {
+    padding: 8px;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    word-wrap: break-word;
+    max-width: 80%;
+}
+.user-message {
+    color: #4DB8FF;
+    text-align: right;
+    margin-left: auto;
+    background-color: #111;
+}
+.ai-message {
+    color: #90EE90;
+    text-align: left;
+    margin-right: auto;
+    background-color: #111;
+}
+.timestamp {
+    font-size: 10px;
+    color: #888;
+    display: block;
+    margin-top: 2px;
+}
+#chat-container {
+    height: 65vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding-right: 5px;
+}
+</style>
+""", unsafe_allow_html=True)
 
-# Title
-st.markdown("<h1 style='text-align:center; color:white;'>🤖 Varun's AI Assistant</h1>", unsafe_allow_html=True)
-st.write("---")
+# ---------- API CLIENT ----------
+client = Groq(api_key="YOUR_GROQ_API_KEY")  # Replace with your Groq API key
 
-# Store messages in session state
+# ---------- APP TITLE ----------
+st.title("🤖 Varun's AI Assistant")
+
+# ---------- AI PERSONALITIES ----------
+personalities = {
+    "Friendly": "You are a friendly and casual AI assistant.",
+    "Professional": "You are a professional AI assistant giving precise answers.",
+    "Funny": "You are a humorous AI assistant, adding jokes lightly.",
+}
+ai_style = st.selectbox("Choose AI Personality", list(personalities.keys()), index=0)
+
+# ---------- SESSION STATE ----------
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Dummy AI reply function — replace with actual API call
-def get_response(prompt):
-    return f"Hello! You said: {prompt}"
+# ---------- LOAD PERSISTENT CHAT HISTORY ----------
+HISTORY_FILE = "chat_history.json"
+if os.path.exists(HISTORY_FILE):
+    with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+        st.session_state.messages = json.load(f)
 
-# Function to send message
-def send_message():
-    user_msg = st.session_state.user_input.strip()
-    if user_msg:
-        st.session_state.messages.append({"role": "user", "content": user_msg})
-        ai_reply = get_response(user_msg)
-        st.session_state.messages.append({"role": "ai", "content": ai_reply})
-        st.session_state.user_input = ""  # Clear input
+# ---------- FUNCTION TO SAVE CHAT HISTORY ----------
+def save_history():
+    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(st.session_state.messages, f, ensure_ascii=False, indent=2)
 
-# Chat history container
-chat_container = st.container()
-with chat_container:
+# ---------- FUNCTION TO GET AI RESPONSE ----------
+def get_ai_response(prompt, personality_prompt):
+    chat_completion = client.chat.completions.create(
+        model="llama3-8b-8192",
+        messages=[
+            {"role": "system", "content": personality_prompt},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    return chat_completion.choices[0].message.content
+
+# ---------- DISPLAY CHAT ----------
+def display_chat():
+    chat_html = "<div id='chat-container'>"
     for msg in st.session_state.messages:
+        timestamp = msg.get("time", "")
         if msg["role"] == "user":
-            st.markdown(f"<div style='text-align:right;color:#4FC3F7;'><b>You:</b> {msg['content']}</div>", unsafe_allow_html=True)
+            chat_html += f"<div class='chat-message user-message'><b>You:</b> {msg['content']}<span class='timestamp'>{timestamp}</span></div>"
         else:
-            st.markdown(f"<div style='text-align:left;color:#81C784;'><b>Varun's AI:</b> {msg['content']}</div>", unsafe_allow_html=True)
+            chat_html += f"<div class='chat-message ai-message'><b>Varun's AI:</b> {msg['content']}<span class='timestamp'>{timestamp}</span></div>"
+    chat_html += "<div id='bottom'></div></div>"
+    st.markdown(chat_html, unsafe_allow_html=True)
+    st.markdown("<script>document.getElementById('bottom').scrollIntoView({behavior: 'smooth'});</script>", unsafe_allow_html=True)
 
-# Input + send button at bottom
-with st.container():
+display_chat()
+
+# ---------- INPUT AREA WITH FORM ----------
+with st.form(key="chat_form", clear_on_submit=True):
     col1, col2 = st.columns([8, 1])
     with col1:
-        st.text_input("💬 Type your message", key="user_input", on_change=send_message)
+        user_input = st.text_input("💬 Type your message", label_visibility="collapsed")
     with col2:
-        st.button("📩", on_click=send_message)
+        send_clicked = st.form_submit_button("📩 Send")
+
+    if send_clicked and user_input.strip():
+        # Add user message with timestamp
+        st.session_state.messages.append({
+            "role": "user",
+            "content": user_input,
+            "time": datetime.now().strftime("%H:%M")
+        })
+        save_history()
+        display_chat()
+
+        # Placeholder for AI typing
+        placeholder = st.empty()
+        placeholder.markdown("<div class='chat-message ai-message'><b>Varun's AI:</b> Typing...</div>", unsafe_allow_html=True)
+        time.sleep(0.8)  # typing indicator pause
+
+        # Get AI response
+        ai_reply = get_ai_response(user_input, personalities[ai_style])
+
+        # Typing animation
+        typed_text = ""
+        for char in ai_reply:
+            typed_text += char
+            placeholder.markdown(
+                f"<div class='chat-message ai-message'><b>Varun's AI:</b> {typed_text}<span class='timestamp'>{datetime.now().strftime('%H:%M')}</span></div>",
+                unsafe_allow_html=True
+            )
+            time.sleep(0.02)  # typing speed
+
+        # Save AI reply
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": ai_reply,
+            "time": datetime.now().strftime("%H:%M")
+        })
+        save_history()
+        st.experimental_rerun()
