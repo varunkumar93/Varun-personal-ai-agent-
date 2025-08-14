@@ -51,8 +51,18 @@ def save_history():
 
 # ---------- GET AI RESPONSE ----------
 def get_ai_response(prompt, personality_prompt, user_profile):
-    context = f"""
-You are Varun's AI Assistant. Your user is {user_profile.get('name', 'a curious person')}.
-They are interested in {', '.join(user_profile.get('interests', []))}.
-Their goals include {', '.join(user_profile.get('goals', []))}.
-Your tone should be {user_profile.get('tone', 'friendly and helpful')}.
+    context = (
+        f"You are Varun's AI Assistant. Your user is {user_profile.get('name', 'a curious person')}.\n"
+        f"They are interested in {', '.join(user_profile.get('interests', []))}.\n"
+        f"Their goals include {', '.join(user_profile.get('goals', []))}.\n"
+        f"Your tone should be {user_profile.get('tone', 'friendly and helpful')}.\n"
+        f"Respond in the style: {personality_prompt}"
+    )
+    chat_completion = client.chat.completions.create(
+        model="llama3-8b-8192",
+        messages=[
+            {"role": "system", "content": context},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    return chat
