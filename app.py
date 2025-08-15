@@ -171,7 +171,7 @@ with st.expander("🧑‍💻 Code Assistant"):
 
     with st.form("code_form", clear_on_submit=True):
         code_input = st.text_area("Paste your code here...", height=200)
-        mode = st.selectbox("Choose Mode", ["Explain", "Debug", "Optimize"])
+        mode = st.selectbox("Choose Mode", ["Explain", "Debug", "Optimize"], key="code_mode")
         save_code = st.checkbox("💾 Save this snippet")
         code_submit = st.form_submit_button("🚀 Run")
 
