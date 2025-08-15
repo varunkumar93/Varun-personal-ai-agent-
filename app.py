@@ -247,14 +247,7 @@ def detect_language(code):
     else:
         return "Unknown"
 
-# ---------- DISPLAY CHAT ----------
-st.markdown("### 💬 Chat with Varun's Assistant")
 
-for msg in st.session_state.messages:
-    if msg["role"] == "user":
-        st.markdown(f"<div class='user-message'>{msg['content']}</div>", unsafe_allow_html=True)
-    else:
-        st.markdown(f"<div class='chat-message'>{msg['content']}</div>", unsafe_allow_html=True)
 
 
 # ---------- CODE DROP ----------
