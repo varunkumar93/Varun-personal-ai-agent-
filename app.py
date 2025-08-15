@@ -313,7 +313,7 @@ if uploaded_file:
 # ---------- CODE DROP ----------
 st.markdown("### 🧑‍💻 Drop Your Code for Explanation, Debugging, or Optimization")
 
-with st.form("code_form", clear_on_submit=True):
+with st.form("code_form_top", clear_on_submit=True):  # First instance
     code_input = st.text_area("Paste your code here...", height=200)
     mode = st.selectbox("Choose Mode", ["Explain", "Debug", "Optimize"])
     save_code = st.checkbox("💾 Save this snippet")
