@@ -5,7 +5,6 @@ from datetime import datetime
 import json
 import os
 import pandas as pd
-from streamlit_speech_recognition import speech_to_text
 
 # ---------- SETTINGS ----------
 st.set_page_config(page_title="Varun's AI Assistant", layout="centered")
@@ -120,37 +119,6 @@ for msg in st.session_state.messages:
     else:
         st.markdown(f"<div class='chat-message'>{msg['content']}</div>", unsafe_allow_html=True)
 
-# ---------- VOICE INPUT ----------
-st.markdown("### 🎙️ Voice Input")
-voice_text = speech_to_text(language="en", use_container_width=True)
-
-if voice_text:
-    st.session_state.messages.append({
-        "role": "user",
-        "content": voice_text,
-        "time": datetime.now().strftime("%H:%M")
-    })
-
-    placeholder = st.empty()
-    placeholder.markdown("<div class='chat-message'><b>Varun's AI:</b> Typing...</div>", unsafe_allow_html=True)
-    time.sleep(0.8)
-
-    ai_reply = get_ai_response(voice_text, personalities[ai_style], user_profile)
-
-    typed_text = ""
-    for char in ai_reply:
-        typed_text += char
-        placeholder.markdown(f"<div class='chat-message'>{typed_text}</div>", unsafe_allow_html=True)
-        time.sleep(0.02)
-
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": ai_reply,
-        "time": datetime.now().strftime("%H:%M")
-    })
-
-    st.rerun()
-
 # ---------- FILE UPLOAD ----------
 st.markdown("### 📁 Upload a File")
 uploaded_file = st.file_uploader("Choose a file", type=["txt", "csv"])
@@ -202,4 +170,28 @@ if code_submit and code_input.strip():
         time.sleep(0.02)
 
     st.session_state.messages.append({
-        "
+        "role": "assistant",
+        "content": ai_reply,
+        "time": datetime.now().strftime("%H:%M")
+    })
+
+    if save_code:
+        os.makedirs("saved_snippets", exist_ok=True)
+        filename = f"saved_snippets/{mode}_{lang}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write(code_input)
+        st.success(f"Code saved to {filename}")
+
+    st.rerun()
+
+# ---------- TEXT INPUT ----------
+st.markdown("<div id='input-area'>", unsafe_allow_html=True)
+with st.form(key="chat_form", clear_on_submit=True):
+    col1, col2 = st.columns([1, 9])
+    with col1:
+        send_clicked = st.form_submit_button("📩", use_container_width=True)
+    with col2:
+        user_input = st.text_input("Type your message...", label_visibility="collapsed")
+st.markdown("</div>", unsafe_allow_html=True)
+
+if send_clicked and
