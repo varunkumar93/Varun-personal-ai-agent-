@@ -4,6 +4,8 @@ import time
 from datetime import datetime
 import json
 import os
+import pandas as pd
+from streamlit_speech_recognition import speech_to_text
 
 # ---------- SETTINGS ----------
 st.set_page_config(page_title="Varun's AI Assistant", layout="centered")
@@ -83,6 +85,32 @@ def get_ai_response(prompt, personality_prompt, user_profile):
     )
     return chat_completion.choices[0].message.content
 
+# ---------- FILE SUMMARIZATION ----------
+def summarize_file(file):
+    if file.type == "text/plain":
+        content = file.read().decode("utf-8")
+        prompt = f"Please summarize the following text:\n\n{content[:3000]}"
+        return get_ai_response(prompt, personalities[ai_style], user_profile)
+    elif file.type == "text/csv":
+        df = pd.read_csv(file)
+        summary_prompt = f"Summarize this CSV file with columns: {', '.join(df.columns)} and {len(df)} rows."
+        return get_ai_response(summary_prompt, personalities[ai_style], user_profile)
+    else:
+        return "Unsupported file type for summarization."
+
+# ---------- LANGUAGE DETECTION ----------
+def detect_language(code):
+    if "def " in code or "import " in code:
+        return "Python"
+    elif "function " in code or "console.log" in code:
+        return "JavaScript"
+    elif "#include" in code or "int main()" in code:
+        return "C++"
+    elif "<html>" in code or "<div>" in code:
+        return "HTML"
+    else:
+        return "Unknown"
+
 # ---------- DISPLAY CHAT ----------
 st.markdown("### 💬 Chat with Varun's Assistant")
 
@@ -92,21 +120,14 @@ for msg in st.session_state.messages:
     else:
         st.markdown(f"<div class='chat-message'>{msg['content']}</div>", unsafe_allow_html=True)
 
-# ---------- INPUT FORM ----------
-st.markdown("<div id='input-area'>", unsafe_allow_html=True)
-with st.form(key="chat_form", clear_on_submit=True):
-    col1, col2 = st.columns([1, 9])
-    with col1:
-        send_clicked = st.form_submit_button("📩", use_container_width=True)
-    with col2:
-        user_input = st.text_input("Type your message...", label_visibility="collapsed")
-st.markdown("</div>", unsafe_allow_html=True)
+# ---------- VOICE INPUT ----------
+st.markdown("### 🎙️ Voice Input")
+voice_text = speech_to_text(language="en", use_container_width=True)
 
-# ---------- HANDLE INPUT ----------
-if send_clicked and user_input.strip():
+if voice_text:
     st.session_state.messages.append({
         "role": "user",
-        "content": user_input,
+        "content": voice_text,
         "time": datetime.now().strftime("%H:%M")
     })
 
@@ -114,7 +135,7 @@ if send_clicked and user_input.strip():
     placeholder.markdown("<div class='chat-message'><b>Varun's AI:</b> Typing...</div>", unsafe_allow_html=True)
     time.sleep(0.8)
 
-    ai_reply = get_ai_response(user_input, personalities[ai_style], user_profile)
+    ai_reply = get_ai_response(voice_text, personalities[ai_style], user_profile)
 
     typed_text = ""
     for char in ai_reply:
@@ -129,3 +150,56 @@ if send_clicked and user_input.strip():
     })
 
     st.rerun()
+
+# ---------- FILE UPLOAD ----------
+st.markdown("### 📁 Upload a File")
+uploaded_file = st.file_uploader("Choose a file", type=["txt", "csv"])
+
+if uploaded_file:
+    st.success(f"Uploaded: {uploaded_file.name}")
+    summary = summarize_file(uploaded_file)
+    st.markdown(f"<div class='chat-message'>{summary}</div>", unsafe_allow_html=True)
+    st.session_state.messages.append({
+        "role": "user",
+        "content": f"Summarize file: {uploaded_file.name}",
+        "time": datetime.now().strftime("%H:%M")
+    })
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": summary,
+        "time": datetime.now().strftime("%H:%M")
+    })
+
+# ---------- CODE DROP ----------
+st.markdown("### 🧑‍💻 Drop Your Code for Explanation, Debugging, or Optimization")
+
+with st.form("code_form", clear_on_submit=True):
+    code_input = st.text_area("Paste your code here...", height=200)
+    mode = st.selectbox("Choose Mode", ["Explain", "Debug", "Optimize"])
+    save_code = st.checkbox("💾 Save this snippet")
+    code_submit = st.form_submit_button("🚀 Run")
+
+if code_submit and code_input.strip():
+    lang = detect_language(code_input)
+    prompt = f"You are a helpful coding assistant. The user pasted {lang} code and wants you to {mode.lower()} it:\n\n{code_input}"
+
+    st.session_state.messages.append({
+        "role": "user",
+        "content": f"{mode} this {lang} code:\n\n{code_input}",
+        "time": datetime.now().strftime("%H:%M")
+    })
+
+    placeholder = st.empty()
+    placeholder.markdown(f"<div class='chat-message'><b>Varun's AI:</b> {mode} in progress...</div>", unsafe_allow_html=True)
+    time.sleep(0.8)
+
+    ai_reply = get_ai_response(prompt, personalities[ai_style], user_profile)
+
+    typed_text = ""
+    for char in ai_reply:
+        typed_text += char
+        placeholder.markdown(f"<div class='chat-message'>{typed_text}</div>", unsafe_allow_html=True)
+        time.sleep(0.02)
+
+    st.session_state.messages.append({
+        "
