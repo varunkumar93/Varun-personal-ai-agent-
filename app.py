@@ -247,55 +247,6 @@ def detect_language(code):
     else:
         return "Unknown"
 
-
-
-
-# ---------- CODE DROP ----------
-st.markdown("### 🧑‍💻 Drop Your Code for Explanation, Debugging, or Optimization")
-
-with st.form("code_form_top", clear_on_submit=True):  # First instance
-    code_input = st.text_area("Paste your code here...", height=200)
-    mode = st.selectbox("Choose Mode", ["Explain", "Debug", "Optimize"])
-    save_code = st.checkbox("💾 Save this snippet")
-    code_submit = st.form_submit_button("🚀 Run")
-
-if code_submit and code_input.strip():
-    lang = detect_language(code_input)
-    prompt = f"You are a helpful coding assistant. The user pasted {lang} code and wants you to {mode.lower()} it:\n\n{code_input}"
-
-    st.session_state.messages.append({
-        "role": "user",
-        "content": f"{mode} this {lang} code:\n\n{code_input}",
-        "time": datetime.now().strftime("%H:%M")
-    })
-
-    placeholder = st.empty()
-    placeholder.markdown(f"<div class='chat-message'><b>Varun's AI:</b> {mode} in progress...</div>", unsafe_allow_html=True)
-    time.sleep(0.8)
-
-    ai_reply = get_ai_response(prompt, personalities[ai_style], user_profile)
-
-    typed_text = ""
-    for char in ai_reply:
-        typed_text += char
-        placeholder.markdown(f"<div class='chat-message'>{typed_text}</div>", unsafe_allow_html=True)
-        time.sleep(0.02)
-
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": ai_reply,
-        "time": datetime.now().strftime("%H:%M")
-    })
-
-    if save_code:
-        os.makedirs("saved_snippets", exist_ok=True)
-        filename = f"saved_snippets/{mode}_{lang}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(code_input)
-        st.success(f"Code saved to {filename}")
-
-    st.rerun()
-
 # ---------- TEXT INPUT ----------
 st.markdown("<div id='input-area'>", unsafe_allow_html=True)
 with st.form(key="chat_form_top", clear_on_submit=True):
