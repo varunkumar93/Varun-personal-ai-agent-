@@ -13,8 +13,14 @@ st.set_page_config(page_title="Varun's AI Assistant", layout="centered")
 if "theme" not in st.session_state:
     st.session_state.theme = "dark"
 
-theme_choice = st.radio("Choose Theme", ["🌙 Dark", "☀️ Light"], horizontal=True)
-
+theme_choice = st.radio("Choose Theme", ["🌙 Dark", "☀️ Light"], horizontal=True, key="theme_toggle")
+import streamlit as st
+from groq import Groq
+import time
+from datetime import datetime
+import json
+import os
+import pandas as pd
 
 # ---------- SETTINGS ----------
 st.set_page_config(page_title="Varun's AI Assistant", layout="centered")
