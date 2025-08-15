@@ -184,7 +184,7 @@ with st.expander("🧑‍💻 Code Assistant"):
         })
         placeholder = st.empty()
         placeholder.markdown(f"<div class='chat-message'><b>Varun's AI:</b> {mode} in progress...</div>", unsafe_allow_html=True)
-        time.sleep(0al=True)
+        time.sleep(0.8)
 st.session_state.theme = "dark" if "Dark" in theme_choice else "light"
 
 # ---------- INLINE CSS ----------
