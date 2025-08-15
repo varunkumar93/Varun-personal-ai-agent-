@@ -194,4 +194,30 @@ with st.form(key="chat_form", clear_on_submit=True):
         user_input = st.text_input("Type your message...", label_visibility="collapsed")
 st.markdown("</div>", unsafe_allow_html=True)
 
-if send_clicked and
+if send_clicked and user_input.strip():
+    st.session_state.messages.append({
+        "role": "user",
+        "content": user_input,
+        "time": datetime.now().strftime("%H:%M")
+    })
+
+    placeholder = st.empty()
+    placeholder.markdown("<div class='chat-message'><b>Varun's AI:</b> Typing...</div>", unsafe_allow_html=True)
+    time.sleep(0.8)
+
+    ai_reply = get_ai_response(user_input, personalities[ai_style], user_profile)
+
+    typed_text = ""
+    for char in ai_reply:
+        typed_text += char
+        placeholder.markdown(f"<div class='chat-message'>{typed_text}</div>", unsafe_allow_html=True)
+        time.sleep(0.02)
+
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": ai_reply,
+        "time": datetime.now().strftime("%H:%M")
+    })
+
+    st.rerun()
+
