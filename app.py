@@ -215,7 +215,7 @@ personalities = {
     "Spiritual Guide": "You are a wise and gentle assistant who shares spiritual insights and devotional inspiration.",
     "Tech Mentor": "You are a practical and encouraging assistant who helps users learn machine learning and build projects."
 }
-ai_style = st.selectbox("Choose AI Personality", list(personalities.keys()), index=0)
+
 
 # ---------- SESSION STATE ----------
 if "messages" not in st.session_state:
