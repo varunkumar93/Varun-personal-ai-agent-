@@ -358,7 +358,7 @@ if code_submit and code_input.strip():
 
 # ---------- TEXT INPUT ----------
 st.markdown("<div id='input-area'>", unsafe_allow_html=True)
-with st.form(key="chat_form", clear_on_submit=True):
+with st.form(key="chat_form_top", clear_on_submit=True):
     col1, col2 = st.columns([1, 9])
     with col1:
         send_clicked = st.form_submit_button("📩", use_container_width=True)
