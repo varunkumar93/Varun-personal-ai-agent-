@@ -256,24 +256,6 @@ for msg in st.session_state.messages:
     else:
         st.markdown(f"<div class='chat-message'>{msg['content']}</div>", unsafe_allow_html=True)
 
-# ---------- FILE UPLOAD ----------
-st.markdown("### 📁 Upload a File")
-uploaded_file = st.file_uploader("Choose a file", type=["txt", "csv"])
-
-if uploaded_file:
-    st.success(f"Uploaded: {uploaded_file.name}")
-    summary = summarize_file(uploaded_file)
-    st.markdown(f"<div class='chat-message'>{summary}</div>", unsafe_allow_html=True)
-    st.session_state.messages.append({
-        "role": "user",
-        "content": f"Summarize file: {uploaded_file.name}",
-        "time": datetime.now().strftime("%H:%M")
-    })
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": summary,
-        "time": datetime.now().strftime("%H:%M")
-    })
 
 # ---------- CODE DROP ----------
 st.markdown("### 🧑‍💻 Drop Your Code for Explanation, Debugging, or Optimization")
